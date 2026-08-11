@@ -14,7 +14,8 @@ caprover login   # contra tu servidor (https://captain.midominio.com)
 ```
 
 El repositorio no necesita cambios: los Dockerfiles de `backend/` y `viewer/`
-ya están preparados para el deploy por tar de CapRover.
+ya están preparados para el deploy por tar de CapRover, y cada carpeta incluye
+su propio `captain-definition` apuntando a su Dockerfile.
 
 ## 2. Crear las apps
 
@@ -80,6 +81,8 @@ importante).
 
 ## 5. Desplegar
 
+### Opción A (recomendada): CLI con tar por carpeta
+
 Desde la raíz del repositorio:
 
 ```bash
@@ -93,19 +96,30 @@ caprover deploy -a grabadora-viewer -t .
 ```
 
 El CLI empaqueta la carpeta (excluye `node_modules` y `.git`) y CapRover
-construye con el Dockerfile de cada carpeta. En cada despliegue posterior,
-vuelve a ejecutar el mismo comando.
+construye con el `captain-definition` de cada carpeta (contexto = la carpeta,
+por eso los `COPY` relativos del Dockerfile funcionan). En cada despliegue
+posterior, vuelve a ejecutar el mismo comando.
 
-### Alternativa: imagen de registro
+### Opción B: imágenes de registro (la más robusta para CI)
 
 Si prefieres builds en CI, sube las imágenes a Docker Hub/GHCR (por ejemplo
 desde GitHub Actions) y configura cada app de CapRover con
 **Deployment Method: Image** y el nombre de la imagen. Para GHCR, registra las
 credenciales del registry en la app.
 
-> El deploy por `git push` de CapRover no es ideal aquí: espera un
-> `captain-definition` en la raíz del repo y un solo Dockerfile por repo, y
-> este es un monorepo con dos imágenes.
+### Opción C: git push (soporte oficial de monorepo, con salvedad)
+
+CapRover soporta monorepos por git: crea `captain-definition-backend` y
+`captain-definition-viewer` en la raíz y en cada app configura
+**Deployment → Captain Definition Path** apuntando al archivo correspondiente
+(o usa el ajuste _captain-definition Relative Path_ por app).
+
+**Salvedad importante:** en el deploy por git el build context es siempre la
+raíz del repo, así que los `COPY` del Dockerfile deben ser relativos a la raíz
+(ej. `COPY ./backend/package*.json ./`). Nuestros Dockerfiles actuales asumen
+contexto = carpeta (para la Opción A), por lo que la Opción C requiere
+Dockerfiles alternativos con rutas `./backend/...` o usar `dockerfileLines`
+en el `captain-definition` raíz. Por eso se recomienda la Opción A o B.
 
 ## 6. Verificación post-despliegue
 
