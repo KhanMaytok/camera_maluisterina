@@ -17,8 +17,8 @@ export function LiveView({ camera }: { camera: Camera }) {
     let client: SignalingClient | null = null;
     let disposed = false;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${protocol}://${wsOrigin()}/api/signaling?camera_id=${camera.id}&role=viewer&token=${encodeURIComponent(getToken())}`;
+    const wsBase = wsOrigin().replace(/^http/, 'ws');
+    const url = `${wsBase}/api/signaling?camera_id=${camera.id}&role=viewer&token=${encodeURIComponent(getToken())}`;
 
     const startCall = (): void => {
       if (disposed || pc) return;
