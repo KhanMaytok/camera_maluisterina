@@ -114,9 +114,15 @@ Si prefieres pasar un tar explícito, créalo primero y apunta `-t` al archivo:
 
 ```bash
 cd backend
-tar -czf ../grabadora-backend.tar .
+tar --exclude=node_modules --exclude=.git -czf ../grabadora-backend.tar .
 caprover deploy -a grabadora-backend -t ../grabadora-backend.tar
 ```
+
+> Los `node_modules` locales **no se necesitan** para desplegar: el Dockerfile
+> de cada app ejecuta `npm ci` dentro del contenedor, así que puedes borrarlos
+> del proyecto (o excluirlos con `--exclude=node_modules`) y el tar seguirá
+> siendo válido y mucho más liviano. Repite el mismo comando con
+> `grabadora-viewer` si despliegas el visor por tar.
 
 > Windows 10/11 incluye `tar` (bsdtar) en el sistema, así que no necesitas
 > WinRAR ni 7-Zip para este paso; el comando anterior funciona tal cual.
