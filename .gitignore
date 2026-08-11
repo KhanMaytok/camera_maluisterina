@@ -30,3 +30,6 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# Tars de despliegue
+*.tar
+*.tar.gz
