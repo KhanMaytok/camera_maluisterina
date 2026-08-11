@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import WebSocket from 'ws';
 import { buildApp, type AppHandle } from '../src/app.js';
+import { checkOfflineCameras } from '../src/retention.js';
 
 let handle: AppHandle;
 let dir: string;
@@ -217,4 +218,16 @@ test('señalización rechaza visor no autenticado', async () => {
     ws.on('error', reject);
     setTimeout(() => reject(new Error('Timeout esperando error de señalización')), 3000);
   });
+});
+
+test('cámara sin heartbeat pasa a offline', () => {
+  const old = new Date(Date.now() - 10 * 60_000).toISOString();
+  handle.db
+    .prepare("UPDATE cameras SET status = 'online', last_seen_at = ? WHERE id = ?")
+    .run(old, cameraId);
+  checkOfflineCameras(handle.db);
+  const row = handle.db.prepare('SELECT status FROM cameras WHERE id = ?').get(cameraId) as {
+    status: string;
+  };
+  assert.equal(row.status, 'offline');
 });

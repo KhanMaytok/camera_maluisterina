@@ -97,6 +97,46 @@ export async function notifyEvent(
   }
 }
 
+export async function notifyCameraOffline(
+  db: Database.Database,
+  camera: { id: string; name: string; user_id: number },
+): Promise<void> {
+  if (!config.push.enabled) return;
+  const devices = db
+    .prepare(
+      "SELECT id, push_data FROM devices WHERE user_id = ? AND kind = 'viewer' AND push_data IS NOT NULL",
+    )
+    .all(camera.user_id) as { id: number; push_data: string }[];
+  const vapid = ensureVapid();
+  const payload = JSON.stringify({
+    title: 'Cámara sin conexión',
+    body: camera.name,
+    data: { type: 'camera_offline', camera_id: camera.id, camera_name: camera.name },
+  });
+  for (const device of devices) {
+    const pushData = JSON.parse(device.push_data) as PushData;
+    try {
+      await webpush.sendNotification(
+        { endpoint: pushData.endpoint, keys: pushData.keys },
+        payload,
+        {
+          vapidDetails: {
+            subject: config.push.vapidSubject,
+            publicKey: vapid.publicKey,
+            privateKey: vapid.privateKey,
+          },
+          TTL: 86400,
+        },
+      );
+    } catch (err) {
+      const code = (err as { statusCode?: number }).statusCode;
+      if (code === 404 || code === 410) {
+        db.prepare('DELETE FROM devices WHERE id = ?').run(device.id);
+      }
+    }
+  }
+}
+
 // FCM HTTP v1 opcional para apps nativas; no se usa en el visor PWA.
 export async function sendFcm(
   project: string,

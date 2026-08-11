@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { config } from './config.js';
 import { nowIso } from './db.js';
+import { notifyCameraOffline } from './push.js';
 import { deleteObject } from './storage.js';
 import { DEFAULT_CAMERA_CONFIG } from './types.js';
 
@@ -30,15 +31,36 @@ export function runRetention(db: Database.Database): void {
   db.prepare('DELETE FROM refresh_tokens WHERE expires_at < ?').run(nowIso());
 }
 
+export function checkOfflineCameras(db: Database.Database): void {
+  const cutoff = new Date(Date.now() - 5 * 60_000).toISOString();
+  const cameras = db
+    .prepare(
+      "SELECT id, name, user_id FROM cameras WHERE user_id IS NOT NULL AND status = 'online' AND (last_seen_at IS NULL OR last_seen_at < ?)",
+    )
+    .all(cutoff) as { id: string; name: string; user_id: number }[];
+  for (const camera of cameras) {
+    db.prepare("UPDATE cameras SET status = 'offline' WHERE id = ?").run(camera.id);
+    void notifyCameraOffline(db, camera);
+  }
+}
+
 export function startRetention(db: Database.Database): NodeJS.Timeout {
   const ms = Math.max(5, config.retentionCheckMinutes) * 60000;
-  const timer = setInterval(() => {
+  const retentionTimer = setInterval(() => {
     try {
       runRetention(db);
     } catch (err) {
       console.error('Retención fallida', err);
     }
   }, ms);
-  timer.unref();
-  return timer;
+  retentionTimer.unref();
+  const offlineTimer = setInterval(() => {
+    try {
+      checkOfflineCameras(db);
+    } catch (err) {
+      console.error('Chequeo offline fallido', err);
+    }
+  }, 60_000);
+  offlineTimer.unref();
+  return retentionTimer;
 }
