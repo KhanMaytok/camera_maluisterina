@@ -6,6 +6,7 @@ camera = "1.4.1"
 webrtc = "1.3.8"
 okhttp = "4.12.0"
 coroutines = "1.9.0"
+lifecycle = "2.8.7"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -15,6 +16,7 @@ camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", versi
 webrtc = { group = "io.getstream", name = "stream-webrtc-android", version.ref = "webrtc" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+androidx-lifecycle-service = { group = "androidx.lifecycle", name = "lifecycle-service", version.ref = "lifecycle" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

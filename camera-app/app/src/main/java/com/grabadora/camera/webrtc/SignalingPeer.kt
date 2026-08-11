@@ -5,8 +5,9 @@ import com.grabadora.camera.vision.I420Frame
 import org.json.JSONArray
 import org.json.JSONObject
 import org.webrtc.AudioSource
+import org.webrtc.CapturerObserver
 import org.webrtc.EglBase
-import org.webrtc.I420Buffer
+import org.webrtc.JavaI420Buffer
 import org.webrtc.MediaConstraints
 import org.webrtc.PeerConnection
 import org.webrtc.PeerConnectionFactory
@@ -143,7 +144,7 @@ class SignalingPeer(
         override fun onRemoveStream(stream: org.webrtc.MediaStream) = Unit
         override fun onDataChannel(channel: org.webrtc.DataChannel) = Unit
         override fun onRenegotiationNeeded() = Unit
-        override fun onAddTrack(receiver: org.webrtc.RtpReceiver, streams: MutableList<org.webrtc.MediaStream>) = Unit
+        override fun onIceCandidatesRemoved(candidates: Array<org.webrtc.IceCandidate>) = Unit
     }
 
     private fun initFactory() {
@@ -189,7 +190,7 @@ class SignalingPeer(
         fun onFrame(frame: I420Frame) {
             val source = source ?: return
             val observer = observer ?: return
-            val buffer = I420Buffer.allocate(frame.width, frame.height)
+            val buffer = JavaI420Buffer.allocate(frame.width, frame.height)
             buffer.dataY.put(frame.y)
             buffer.dataU.put(frame.u)
             buffer.dataV.put(frame.v)

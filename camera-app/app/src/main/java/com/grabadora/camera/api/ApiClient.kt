@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 
 data class RegisterResponse(val cameraId: String, val clientSecret: String)
 
-data class HeartbeatResponse(val config: JSONObject, val commands: JSONArray)
+data class HeartbeatResponse(val config: JSONObject, val commands: JSONArray, val now: String)
 
 data class PresignResponse(val eventId: String, val kind: String, val videoPutUrl: String?, val thumbPutUrl: String)
 
@@ -47,7 +47,11 @@ class ApiClient(serverUrl: String) {
     suspend fun heartbeat(cameraId: String, secret: String): HeartbeatResponse {
         val res = request("POST", "/api/cameras/$cameraId/heartbeat", null, cameraId, secret)
         val json = JSONObject(res)
-        return HeartbeatResponse(json.getJSONObject("config"), json.getJSONArray("commands"))
+        return HeartbeatResponse(
+            json.getJSONObject("config"),
+            json.getJSONArray("commands"),
+            json.optString("now", ""),
+        )
     }
 
     suspend fun ackCommand(cameraId: String, secret: String, commandId: String) {
@@ -151,4 +155,3 @@ class ApiClient(serverUrl: String) {
         }
     }
 }
-

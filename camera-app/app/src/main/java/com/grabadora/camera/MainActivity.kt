@@ -16,7 +16,6 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.grabadora.camera.api.ApiClient
 import com.grabadora.camera.core.CameraService
@@ -30,6 +29,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainActivity : Activity() {
+    private companion object {
+        const val PERMISSIONS_REQUEST_CODE = 100
+    }
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private lateinit var configStore: ConfigStore
     private lateinit var statusText: TextView
@@ -40,17 +43,6 @@ class MainActivity : Activity() {
         Manifest.permission.RECORD_AUDIO,
         Manifest.permission.POST_NOTIFICATIONS,
     )
-
-    private val permissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-            val granted = result.values.all { it }
-            Toast.makeText(
-                this,
-                if (granted) "Permisos concedidos" else "Faltan permisos para grabar",
-                Toast.LENGTH_LONG,
-            ).show()
-            requestBatteryOptimization()
-        }
 
     private val statusReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -94,7 +86,7 @@ class MainActivity : Activity() {
                     Intent(this, CameraService::class.java).setAction(CameraService.ACTION_START),
                 )
             } else {
-                permissionLauncher.launch(permissions)
+                requestPermissions(permissions, PERMISSIONS_REQUEST_CODE)
             }
         }
 
@@ -115,6 +107,23 @@ class MainActivity : Activity() {
     override fun onPause() {
         super.onPause()
         unregisterReceiver(statusReceiver)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSIONS_REQUEST_CODE) {
+            val granted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+            Toast.makeText(
+                this,
+                if (granted) "Permisos concedidos" else "Faltan permisos para grabar",
+                Toast.LENGTH_LONG,
+            ).show()
+            requestBatteryOptimization()
+        }
     }
 
     override fun onDestroy() {
@@ -163,4 +172,3 @@ class MainActivity : Activity() {
         }
     }
 }
-

@@ -176,7 +176,7 @@ class ClipRecorder(
             val old = segmentWriter
             segmentWriter = null
             val file = old?.finish()
-            if (file != null) onSegmentRotated?.invoke(file)
+            if (file != null) onSegmentRotated?.invoke(file.file)
         }
         if (eventActive) clipWriter?.write(frame)
     }

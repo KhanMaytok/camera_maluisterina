@@ -4,8 +4,8 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.app.Service
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.graphics.ImageFormat
@@ -21,6 +21,7 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleService
 import com.grabadora.camera.MainActivity
 import com.grabadora.camera.R
 import com.grabadora.camera.api.ApiClient
@@ -47,7 +48,7 @@ import java.util.TimeZone
 import java.util.concurrent.Executors
 import java.time.LocalTime
 
-class CameraService : Service() {
+class CameraService : LifecycleService() {
     companion object {
         const val ACTION_START = "com.grabadora.camera.START"
         const val ACTION_STOP = "com.grabadora.camera.STOP"
@@ -98,6 +99,7 @@ class CameraService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
         if (intent?.action == ACTION_STOP) {
             stopSelf()
             return START_NOT_STICKY
@@ -396,9 +398,9 @@ class CameraService : Service() {
     }
 
     private suspend fun thermalLoop() {
-        val batteryManager = getSystemService(BATTERY_SERVICE) as BatteryManager
         while (true) {
-            val tempC = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_TEMPERATURE) / 10f
+            val sticky = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+            val tempC = (sticky?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0) / 10f
             thermalEnabled = tempC < 45f
             if (tempC >= 42f && !thermalDegraded) {
                 thermalDegraded = true
