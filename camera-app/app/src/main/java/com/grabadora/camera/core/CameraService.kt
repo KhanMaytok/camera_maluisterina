@@ -285,6 +285,7 @@ class CameraService : LifecycleService() {
             if (cameraId.isNotEmpty() && secret.isNotEmpty()) {
                 try {
                     val res = api.heartbeat(cameraId, secret)
+                    android.util.Log.i("Grabadora", "Heartbeat OK para $cameraId")
                     clockOffsetMs = try {
                         Date.parse(res.now) - System.currentTimeMillis()
                     } catch (_: Exception) {
@@ -302,6 +303,7 @@ class CameraService : LifecycleService() {
                         api.ackCommand(cameraId, secret, id)
                     }
                 } catch (e: Exception) {
+                    android.util.Log.e("Grabadora", "Heartbeat falló: ${e.message}")
                     publishStatus("Sin conexión al backend")
                 }
             }
@@ -445,6 +447,7 @@ class CameraService : LifecycleService() {
                 secret,
                 object : SignalingListener {
                     override fun onReady(iceServers: org.json.JSONArray) {
+                        android.util.Log.i("Grabadora", "Señalización lista, creando peer")
                         backoff = 2_000L
                         peer = SignalingPeer(
                             this@CameraService,
@@ -462,6 +465,7 @@ class CameraService : LifecycleService() {
                     }
 
                     override fun onMessage(message: JSONObject) {
+                        android.util.Log.i("Grabadora", "Señalización msg: " + message.optString("type"))
                         when (message.optString("type")) {
                             "offer" -> peer?.handleOffer(message.optString("sdp"))
                             "ice" -> peer?.handleIce(message)
@@ -469,12 +473,14 @@ class CameraService : LifecycleService() {
                     }
 
                     override fun onClosed(code: Int, reason: String) {
+                        android.util.Log.i("Grabadora", "Señalización cerrada: $code $reason")
                         peer?.stop()
                         peer = null
                         if (!gate.isCompleted) gate.complete(Unit)
                     }
 
                     override fun onFailure(message: String) {
+                        android.util.Log.i("Grabadora", "Señalización falló: $message")
                         peer?.stop()
                         peer = null
                         if (!gate.isCompleted) gate.complete(Unit)

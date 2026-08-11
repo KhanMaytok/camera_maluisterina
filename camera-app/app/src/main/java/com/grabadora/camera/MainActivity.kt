@@ -81,6 +81,9 @@ class MainActivity : Activity() {
             }
             if (hasPermissions()) {
                 configStore.serviceEnabled = true
+                // Reinicia el servicio si ya estaba corriendo, para que tome
+                // las credenciales de emparejamiento actuales.
+                stopService(Intent(this, CameraService::class.java))
                 ContextCompat.startForegroundService(
                     this,
                     Intent(this, CameraService::class.java).setAction(CameraService.ACTION_START),

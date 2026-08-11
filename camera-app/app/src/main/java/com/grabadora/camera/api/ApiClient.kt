@@ -136,13 +136,20 @@ class ApiClient(serverUrl: String) {
         cameraId: String? = null,
         secret: String? = null,
     ): String = withContext(Dispatchers.IO) {
+        val requestBody = body?.toRequestBody("application/json".toMediaType())
+            ?: if (method == "POST" || method == "PUT" || method == "PATCH") {
+                "".toRequestBody(null)
+            } else {
+                null
+            }
         val builder = Request.Builder()
             .url("$base$path")
-            .method(method, body?.toRequestBody("application/json".toMediaType()))
+            .method(method, requestBody)
         if (cameraId != null) builder.header("X-Camera-Id", cameraId)
         if (secret != null) builder.header("X-Camera-Secret", secret)
         client.newCall(builder.build()).execute().use { res ->
             val text = res.body?.string() ?: ""
+            android.util.Log.i("Grabadora", "$method $path -> ${res.code}")
             if (!res.isSuccessful) {
                 val message = try {
                     JSONObject(text).optJSONObject("error")?.optString("message") ?: "HTTP ${res.code}"
