@@ -33,6 +33,7 @@ import com.grabadora.camera.vision.FrameProcessor
 import com.grabadora.camera.vision.MotionDetector
 import com.grabadora.camera.webrtc.SignalingPeer
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -431,53 +432,59 @@ class CameraService : LifecycleService() {
         while (true) {
             val cameraId = configStore.cameraId
             val secret = configStore.cameraSecret
-            if (cameraId.isNotEmpty() && secret.isNotEmpty()) {
-                var connected = false
-                signalingSocket = api.signalingSocket(
-                    cameraId,
-                    secret,
-                    object : SignalingListener {
-                        override fun onReady(iceServers: org.json.JSONArray) {
-                            connected = true
-                            peer = SignalingPeer(
-                                this@CameraService,
-                                onSendSdp = { sdp -> signalingSocket?.send(JSONObject().put("type", "answer").put("sdp", sdp.description).toString()) },
-                                onSendIce = { candidate -> signalingSocket?.send(candidate.toString()) },
-                                onDisconnected = { _ -> },
-                            ).also { it.start(iceServers) }
-                        }
-
-                        override fun onMessage(message: JSONObject) {
-                            when (message.optString("type")) {
-                                "offer" -> peer?.handleOffer(message.optString("sdp"))
-                                "ice" -> peer?.handleIce(message)
-                            }
-                        }
-
-                        override fun onClosed(code: Int, reason: String) {
-                            peer?.stop()
-                        }
-
-                        override fun onFailure(message: String) {
-                            peer?.stop()
-                        }
-                    },
-                )
-                var waitMs = backoff
-                while (waitMs > 0 && connected.not()) {
-                    delay(500)
-                    waitMs -= 500
-                }
-                if (!connected) {
-                    publishStatus("Señalización desconectada")
-                    delay(backoff)
-                    backoff = (backoff * 2).coerceAtMost(30_000)
-                } else {
-                    backoff = 2_000L
-                }
-            } else {
+            if (cameraId.isEmpty() || secret.isEmpty()) {
                 delay(5_000)
+                continue
             }
+            // Una sola conexión a la vez: esperamos a que esta se cierre o
+            // falle antes de reconectar, para no dejar sockets zombie que el
+            // backend rechaza y que matan el peer WebRTC activo.
+            val gate = CompletableDeferred<Unit>()
+            signalingSocket = api.signalingSocket(
+                cameraId,
+                secret,
+                object : SignalingListener {
+                    override fun onReady(iceServers: org.json.JSONArray) {
+                        backoff = 2_000L
+                        peer = SignalingPeer(
+                            this@CameraService,
+                            onSendSdp = { sdp ->
+                                signalingSocket?.send(
+                                    JSONObject()
+                                        .put("type", "answer")
+                                        .put("sdp", sdp.description)
+                                        .toString(),
+                                )
+                            },
+                            onSendIce = { candidate -> signalingSocket?.send(candidate.toString()) },
+                            onDisconnected = { _ -> },
+                        ).also { it.start(iceServers) }
+                    }
+
+                    override fun onMessage(message: JSONObject) {
+                        when (message.optString("type")) {
+                            "offer" -> peer?.handleOffer(message.optString("sdp"))
+                            "ice" -> peer?.handleIce(message)
+                        }
+                    }
+
+                    override fun onClosed(code: Int, reason: String) {
+                        peer?.stop()
+                        peer = null
+                        if (!gate.isCompleted) gate.complete(Unit)
+                    }
+
+                    override fun onFailure(message: String) {
+                        peer?.stop()
+                        peer = null
+                        if (!gate.isCompleted) gate.complete(Unit)
+                    }
+                },
+            )
+            gate.await()
+            publishStatus("Señalización desconectada, reconectando…")
+            delay(backoff)
+            backoff = (backoff * 2).coerceAtMost(30_000)
         }
     }
 
