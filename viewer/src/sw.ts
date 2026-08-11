@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute } from 'workbox-precaching';
 import { idbGet } from './idb';
+import { API_BASE } from './config';
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
@@ -17,7 +18,7 @@ self.addEventListener('push', (event) => {
       try {
         const token = await idbGet('token');
         if (token && data?.data?.event_id) {
-          const res = await fetch(`/api/events/${data.data.event_id}/thumbnail`, {
+          const res = await fetch(`${API_BASE}/api/events/${data.data.event_id}/thumbnail`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) image = URL.createObjectURL(await res.blob());

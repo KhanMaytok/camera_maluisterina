@@ -6,10 +6,6 @@
   "engines": {
     "node": ">=20"
   },
-  "allowScripts": [
-    "better-sqlite3",
-    "esbuild"
-  ],
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",

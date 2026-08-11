@@ -1,7 +1,6 @@
 import { idbSet } from './idb';
 import type { Camera, EventItem, User } from './types';
-
-const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? '';
+import { API_BASE } from './config';
 
 let accessToken = localStorage.getItem('token') ?? '';
 let refreshToken = localStorage.getItem('refresh') ?? '';

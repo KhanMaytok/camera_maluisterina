@@ -1,5 +1,7 @@
 # Guía de despliegue — Grabadora
 
+> ¿Usas CapRover? Ve directo a [DEPLOY-CAPROVER.md](DEPLOY-CAPROVER.md).
+
 Guía operativa para poner el sistema en producción. Asume un VPS con Docker y
 un dominio propio (ej. `grabadora.midominio.com`).
 

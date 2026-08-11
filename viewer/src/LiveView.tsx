@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getToken, sendCommand } from './api';
+import { wsOrigin } from './config';
 import type { Camera } from './types';
 import { SignalingClient, type SignalMessage } from './ws';
 
@@ -17,7 +18,7 @@ export function LiveView({ camera }: { camera: Camera }) {
     let disposed = false;
 
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${protocol}://${window.location.host}/api/signaling?camera_id=${camera.id}&role=viewer&token=${encodeURIComponent(getToken())}`;
+    const url = `${protocol}://${wsOrigin()}/api/signaling?camera_id=${camera.id}&role=viewer&token=${encodeURIComponent(getToken())}`;
 
     const startCall = (): void => {
       if (disposed || pc) return;
