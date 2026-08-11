@@ -118,6 +118,9 @@ tar -czf ../grabadora-backend.tar .
 caprover deploy -a grabadora-backend -t ../grabadora-backend.tar
 ```
 
+> Windows 10/11 incluye `tar` (bsdtar) en el sistema, así que no necesitas
+> WinRAR ni 7-Zip para este paso; el comando anterior funciona tal cual.
+
 > Error típico: `form-data: EISDIR: illegal operation on a directory` aparece
 > cuando se ejecuta `caprover deploy -a <app> -t .` (carpeta en `-t`). La
 > solución es omitir `-t` y desplegar desde dentro de la carpeta.
