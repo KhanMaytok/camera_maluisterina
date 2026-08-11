@@ -111,7 +111,8 @@ reproduce.
 - [x] Retención local configurable (default 7 días) con borrado del más
       antiguo (FR-12).
 - [x] Alertas de espacio: la app reporta estado vía notificación de servicio
-      (FR-14 parcial: sin umbral automático de 2 GB).
+      y reduce la retención local a 1 día si el espacio libre baja de 2 GB
+      (FR-14).
 - [x] Grabación independiente de internet y del visor (FR-11, TR-12).
 
 ### Detección de movimiento (FR-15 a FR-21, TR-10, TR-11)
@@ -119,9 +120,10 @@ reproduce.
 - [x] Ring buffer en memoria de 15 s (configurable) para pre-roll (FR-16).
 - [x] Detección por diferencia de luminancia sobre frames 160×90 sin ML
       (FR-15, TR-11).
-- [x] Sensibilidad configurable vía visor (FR-20 parcial).
-- [ ] Zona de detección rectangular y franjas horarias (FR-20: pendiente en la
-      app cámara; el backend ya persiste `motionZone`/`activeFrom`/`activeTo`).
+- [x] Sensibilidad configurable vía visor (FR-20).
+- [x] Zona de detección rectangular (x/y/w/h en %) y franjas horarias de
+      detección, configurables desde el visor y aplicadas en la app cámara
+      (FR-20).
 - [x] Coalescing: un evento continuo genera un solo clip (FR-18).
 - [x] Clip final = pre-roll 15 s + post-roll 30 s (defaults configurables)
       y thumbnail JPEG del último frame (FR-17, FR-19).
@@ -151,7 +153,7 @@ reproduce.
 - [x] Visor: reproductor de clip con pausa/salto y hora local del evento
       (FR-35, FR-36).
 - [x] Eliminar clip con confirmación (FR-37).
-- [ ] Descargar clip (P2, FR-37: pendiente en el visor).
+- [x] Descargar clip (P2, FR-37: botón "Descargar" en el visor).
 
 ### Pruebas de M2
 
@@ -175,7 +177,8 @@ clip; cambiar sensibilidad se refleja en la cámara en < 60 s.
 - [x] Backend: registro de token push por dispositivo (`devices`, spec §7.1)
       vía `POST /api/push/subscribe`.
 - [x] Push al subir clip con thumbnail y enlace directo (FR-27).
-- [ ] Silencio por cámara y por franja horaria (FR-28: pendiente).
+- [x] Silencio por cámara y por franja horaria (FR-28: configuración en el
+      visor + decisión de envío en el backend, con tests).
 - [x] Alerta "cámara sin conexión" tras 5 min sin contacto (FR-29, con test).
 - [x] PWA: suscripción a push (Web Push + VAPID) y manejo con deep link al
       clip y thumbnail autenticado.
@@ -197,8 +200,8 @@ clip; cambiar sensibilidad se refleja en la cámara en < 60 s.
 
 ### Sincronización de reloj (TR-20, TR-21)
 
-- [ ] Ajuste de reloj de la cámara al emparejar y cada 6 h (TR-21: pendiente;
-      los timestamps se envían UTC con el reloj del dispositivo).
+- [x] Sincronización de reloj: la cámara ajusta su offset contra la hora del
+      servidor en cada heartbeat (cada 30 s, TR-21).
 - [x] Todos los timestamps en UTC ISO-8601; conversión en el visor (TR-20).
 
 ### Pruebas de M3
@@ -220,8 +223,8 @@ sin pérdida de clips por caídas transitorias; documentación lista.
 
 ### Estabilidad del dispositivo (TR-08, TR-12)
 
-- [x] Monitoreo de temperatura con pausa automática de detección al superar
-      42 °C (TR-12 parcial: sin degradación de resolución).
+- [x] Monitoreo de temperatura con degradación de calidad (bitrate/fps desde
+      42 °C) y pausa de detección al superar 45 °C (TR-12).
 - [x] Manejo de optimización de batería de Android (ignorar optimizaciones)
       y arranque tras reinicio del teléfono (BOOT_COMPLETED).
 - [~] Prueba real de 72 h enchufado con registro de temperatura y reinicios.
@@ -261,13 +264,9 @@ sin pérdida de clips por caídas transitorias; documentación lista.
 
 ## Desviaciones conocidas respecto al spec
 
-- **FR-20 (zona/franjas)** y **FR-28 (silencio por cámara/franja)**: no
-  implementados; el backend ya persiste los campos de configuración.
-- **TR-21 (NTP)**: pendiente; se usan los timestamps UTC del dispositivo.
-- **FR-37 (descarga de clip)**: pendiente en el visor (P2).
-- **FR-14**: sin umbral automático de 2 GB (solo reporte de estado).
-- **TR-12**: la degradación térmica pausa detección pero no reduce resolución.
 - **iOS como cámara**: fuera de alcance v1 (no-objetivo del spec).
+- **TR-12**: la degradación térmica reduce bitrate/fps pero no la resolución
+  de captura (requeriría rebind de CameraX en caliente).
 
 ---
 
