@@ -100,7 +100,15 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        registerReceiver(statusReceiver, IntentFilter(CameraService.ACTION_STATUS))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(
+                statusReceiver,
+                IntentFilter(CameraService.ACTION_STATUS),
+                Context.RECEIVER_NOT_EXPORTED,
+            )
+        } else {
+            registerReceiver(statusReceiver, IntentFilter(CameraService.ACTION_STATUS))
+        }
         updatePairingUi()
     }
 
