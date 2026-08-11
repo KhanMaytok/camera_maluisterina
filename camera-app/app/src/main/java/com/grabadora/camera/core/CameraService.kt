@@ -9,6 +9,7 @@ import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.graphics.ImageFormat
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.YuvImage
 import android.os.BatteryManager
@@ -117,7 +118,7 @@ class CameraService : LifecycleService() {
         super.onDestroy()
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    override fun onBind(intent: Intent): IBinder? = null
 
     private fun startCamera() {
         val providerFuture = ProcessCameraProvider.getInstance(this)
@@ -272,7 +273,7 @@ class CameraService : LifecycleService() {
         val nv21 = frameProcessor?.consumeNv21() ?: return null
         val (w, h) = frameProcessor?.latestDimensions() ?: return null
         val out = ByteArrayOutputStream()
-        YuvImage(nv21, ImageFormat.NV21, w, h, null).compressToJpeg(RectF(0f, 0f, w.toFloat(), h.toFloat()), 70, out)
+        YuvImage(nv21, ImageFormat.NV21, w, h, null).compressToJpeg(Rect(0, 0, w, h), 70, out)
         return out.toByteArray()
     }
 

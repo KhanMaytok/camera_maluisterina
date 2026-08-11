@@ -46,7 +46,7 @@ class SignalingPeer(
         val helper = SurfaceTextureHelper.create("grabadora-capturer", eglBase?.eglBaseContext)
         val source = factory.createVideoSource(false)
         capturer = FrameCapturer(source)
-        capturer?.initialize(helper, context, source)
+        capturer?.initialize(helper, context, source.getCapturerObserver())
         pc.addTrack(factory.createVideoTrack("camera0", source), emptyList())
         audioSource = factory.createAudioSource(
             MediaConstraints().apply {

@@ -30,9 +30,8 @@ class MotionDetector(
         for (y in 0 until height) {
             val yNorm = y / height.toFloat()
             for (x in 0 until width) {
-                zone?.let { z ->
-                    if (!z.contains(x / width.toFloat(), yNorm)) continue
-                }
+                val z = zone
+                if (z != null && !z.contains(x / width.toFloat(), yNorm)) continue
                 val idx = y * width + x
                 val a = gray[idx].toInt() and 0xff
                 val b = prev[idx].toInt() and 0xff
@@ -47,4 +46,3 @@ class MotionDetector(
         return (changed.toFloat() / (width * height).toFloat()).coerceIn(0f, 1f)
     }
 }
-
