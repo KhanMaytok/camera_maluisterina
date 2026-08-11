@@ -47,6 +47,8 @@ En el panel de CapRover (o con `caprover apps`):
 En la app `grabadora-backend` (Secrets/Env), al menos:
 
 ```env
+DATABASE_PATH=/data/grabadora.db
+MEDIA_DIR=/data/media
 JWT_SECRET=<openssl rand -hex 32>
 REFRESH_SECRET=<openssl rand -hex 32>
 PUBLIC_BASE_URL=https://backend.midominio.com
@@ -72,6 +74,10 @@ TURN_PASSWORD=...
 
 RETENTION_CHECK_MINUTES=60
 ```
+
+> **Importante:** `DATABASE_PATH` y `MEDIA_DIR` deben apuntar a `/data` (el
+> volumen persistente). Sin ellos, la base se escribe en la capa del
+> contenedor y **se pierde en cada redespliegue**.
 
 `VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY` se pueden generar con
 `npx web-push generate-vapid-keys`; si no las defines, el backend las crea y
