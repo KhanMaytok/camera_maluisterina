@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { WebSocket } from 'ws';
 import type Database from 'better-sqlite3';
 import { verifyAccess, verifyPassword } from '../auth.js';
+import { config } from '../config.js';
 
 interface Room {
   camera: WebSocket | null;
@@ -71,10 +72,10 @@ export function signalingRoutes(app: FastifyInstance, db: Database.Database): vo
         return;
       }
       room.camera = socket;
-      send(socket, { type: 'ready', role: 'camera' });
+      send(socket, { type: 'ready', role: 'camera', iceServers: config.iceServers });
     } else {
       room.viewers.add(socket);
-      send(socket, { type: 'ready', role: 'viewer' });
+      send(socket, { type: 'ready', role: 'viewer', iceServers: config.iceServers });
     }
 
     socket.on('message', (data) => {

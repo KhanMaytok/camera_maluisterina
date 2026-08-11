@@ -25,6 +25,20 @@ export const config = {
     bucketClips: process.env.S3_BUCKET_CLIPS ?? 'grabadora-clips',
     bucketThumbs: process.env.S3_BUCKET_THUMBS ?? 'grabadora-thumbs',
   },
+  iceServers: [
+    ...(process.env.STUN_URLS ?? 'stun:stun.l.google.com:19302')
+      .split(',')
+      .map((url) => ({ urls: url.trim() })),
+    ...(process.env.TURN_URL
+      ? [
+          {
+            urls: process.env.TURN_URL,
+            username: process.env.TURN_USERNAME,
+            credential: process.env.TURN_PASSWORD,
+          },
+        ]
+      : []),
+  ],
   push: {
     enabled: bool(process.env.PUSH_ENABLED),
     vapidPublicKey: process.env.VAPID_PUBLIC_KEY,
