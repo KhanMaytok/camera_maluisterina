@@ -23,6 +23,8 @@ export function LiveView({ camera }: { camera: Camera }) {
     const startCall = (): void => {
       if (disposed || pc) return;
       pc = new RTCPeerConnection({ iceServers: client?.iceServers ?? [] });
+      pc.addTransceiver('video', { direction: 'recvonly' });
+      pc.addTransceiver('audio', { direction: 'recvonly' });
       pc.onicecandidate = (event) => {
         if (event.candidate) client?.send({ type: 'ice', candidate: event.candidate.toJSON() });
       };
