@@ -6,6 +6,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.webrtc.AudioSource
 import org.webrtc.CapturerObserver
+import org.webrtc.DefaultVideoDecoderFactory
+import org.webrtc.DefaultVideoEncoderFactory
 import org.webrtc.EglBase
 import org.webrtc.JavaI420Buffer
 import org.webrtc.MediaConstraints
@@ -42,7 +44,6 @@ class SignalingPeer(
             observer,
         ) ?: return
         peer = pc
-        eglBase = EglBase.create()
         val helper = SurfaceTextureHelper.create("grabadora-capturer", eglBase?.eglBaseContext)
         val source = factory.createVideoSource(false)
         capturer = FrameCapturer(source)
@@ -154,7 +155,12 @@ class SignalingPeer(
                 .setEnableInternalTracer(false)
                 .createInitializationOptions(),
         )
-        factory = PeerConnectionFactory.builder().createPeerConnectionFactory()
+        eglBase = EglBase.create()
+        val eglContext = eglBase?.eglBaseContext
+        factory = PeerConnectionFactory.builder()
+            .setVideoEncoderFactory(DefaultVideoEncoderFactory(eglContext, true, true))
+            .setVideoDecoderFactory(DefaultVideoDecoderFactory(eglContext))
+            .createPeerConnectionFactory()
     }
 
     private fun buildIceServers(json: JSONArray): List<PeerConnection.IceServer> {
