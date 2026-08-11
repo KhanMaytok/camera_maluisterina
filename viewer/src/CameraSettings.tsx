@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { sendCommand, updateCamera } from './api';
+import { deleteCamera, sendCommand, updateCamera } from './api';
 import { clamp } from './lib';
 import type { Camera } from './types';
 
@@ -8,6 +8,13 @@ export function CameraSettings({ camera, onSaved }: { camera: Camera; onSaved: (
   const [name, setName] = useState(camera.name);
   const [zone, setZone] = useState(camera.zone);
   const [saving, setSaving] = useState(false);
+
+  const remove = (): void => {
+    if (!confirm(`¿Eliminar la cámara "${camera.name}"? Se borrarán sus eventos.`)) return;
+    void deleteCamera(camera.id)
+      .then(onSaved)
+      .catch((e) => alert(e.message));
+  };
 
   const save = (): void => {
     setSaving(true);
@@ -199,6 +206,9 @@ export function CameraSettings({ camera, onSaved }: { camera: Camera; onSaved: (
           {config.detectionEnabled ? 'Pausar detección' : 'Reanudar detección'}
         </button>
       </div>
+      <button className="danger" onClick={remove}>
+        Eliminar cámara
+      </button>
     </section>
   );
 }

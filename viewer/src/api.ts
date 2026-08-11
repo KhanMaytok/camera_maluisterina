@@ -116,6 +116,8 @@ export const updateCamera = (
   body: { name?: string; zone?: string; config?: Record<string, unknown> },
 ): Promise<Camera> =>
   api(`/api/cameras/${cameraId}`, { method: 'PATCH', body: JSON.stringify(body) });
+export const deleteCamera = (cameraId: string): Promise<{ ok: boolean }> =>
+  api(`/api/cameras/${cameraId}`, { method: 'DELETE' });
 export const pairCamera = (body: {
   pairing_token: string;
   name: string;

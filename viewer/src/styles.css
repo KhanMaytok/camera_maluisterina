@@ -75,6 +75,12 @@ button.ghost {
   background: transparent;
 }
 
+button.danger {
+  border-color: var(--bad);
+  color: var(--bad);
+  background: transparent;
+}
+
 .row {
   display: flex;
   gap: 0.5rem;
