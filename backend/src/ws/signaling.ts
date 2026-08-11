@@ -60,6 +60,7 @@ export function signalingRoutes(app: FastifyInstance, db: Database.Database): vo
       return;
     }
 
+    console.log(`[ws] ${role} intenta unirse camera=${cameraId}`);
     let room = rooms.get(cameraId);
     if (!room) {
       room = { camera: null, viewers: new Set() };
@@ -67,14 +68,17 @@ export function signalingRoutes(app: FastifyInstance, db: Database.Database): vo
     }
     if (role === 'camera') {
       if (room.camera) {
+        console.log(`[ws] rechazado camera=${cameraId}: ya hay conexión activa`);
         send(socket, { type: 'error', message: 'La cámara ya tiene una conexión activa' });
         socket.close();
         return;
       }
       room.camera = socket;
+      console.log(`[ws] camera=${cameraId} asignada a la sala`);
       send(socket, { type: 'ready', role: 'camera', iceServers: config.iceServers });
     } else {
       room.viewers.add(socket);
+      console.log(`[ws] viewer unido camera=${cameraId}`);
       send(socket, { type: 'ready', role: 'viewer', iceServers: config.iceServers });
     }
 
@@ -87,6 +91,7 @@ export function signalingRoutes(app: FastifyInstance, db: Database.Database): vo
       }
       const current = rooms.get(cameraId);
       if (!current) return;
+      console.log(`[ws] ${role} envía msg=${message.type} camera=${cameraId}`);
       if (role === 'camera') {
         for (const viewer of current.viewers) send(viewer, message);
       } else if (current.camera) {
@@ -99,9 +104,11 @@ export function signalingRoutes(app: FastifyInstance, db: Database.Database): vo
       if (!current) return;
       if (role === 'camera') {
         current.camera = null;
+        console.log(`[ws] camera=${cameraId} liberó la sala`);
         for (const viewer of current.viewers) send(viewer, { type: 'camera_left' });
       } else {
         current.viewers.delete(socket);
+        console.log(`[ws] viewer salió camera=${cameraId}`);
       }
       if (!current.camera && current.viewers.size === 0) rooms.delete(cameraId);
     };
