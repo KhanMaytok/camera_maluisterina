@@ -13,6 +13,15 @@ npm install -g caprover
 caprover login   # contra tu servidor (https://captain.midominio.com)
 ```
 
+`caprover login` guarda las credenciales en `~/.captain/config`; es el único
+paso interactivo. Después, todo el despliegue se puede hacer con:
+
+```powershell
+.\deploy.ps1              # backend + viewer
+.\deploy.ps1 -App backend
+.\deploy.ps1 -App viewer
+```
+
 El repositorio no necesita cambios: los Dockerfiles de `backend/` y `viewer/`
 ya están preparados para el deploy por tar de CapRover, y cada carpeta incluye
 su propio `captain-definition` apuntando a su Dockerfile.
