@@ -126,15 +126,15 @@ Teléfono viejo (cámara) ──WebRTC (en vivo)──▶ Tu teléfono (visor)
 
 ## Stack tecnológico
 
-| Componente | Tecnología |
-|------------|------------|
-| App cámara | Kotlin, CameraX, MediaRecorder, WebRTC Android SDK |
-| Visor | React, Vite, PWA |
-| Backend | Node.js, Fastify, WebSocket, better-sqlite3 |
-| Storage | Cloudflare R2 (primario) / Backblaze B2 |
-| TURN | coturn autoalojado (opcional) |
-| Push | Firebase Cloud Messaging |
-| Infraestructura | Docker, VPS pequeño con TLS (Caddy/Nginx) |
+| Componente      | Tecnología                                         |
+| --------------- | -------------------------------------------------- |
+| App cámara      | Kotlin, CameraX, MediaRecorder, WebRTC Android SDK |
+| Visor           | React, Vite, PWA                                   |
+| Backend         | Node.js, Fastify, WebSocket, better-sqlite3        |
+| Storage         | Cloudflare R2 (primario) / Backblaze B2            |
+| TURN            | coturn autoalojado (opcional)                      |
+| Push            | Firebase Cloud Messaging                           |
+| Infraestructura | Docker, VPS pequeño con TLS (Caddy/Nginx)          |
 
 ---
 
@@ -242,11 +242,11 @@ TURN_PASSWORD=...
 
 ## Costos estimados
 
-| Concepto | Costo mensual aprox. |
-|----------|----------------------|
-| VPS pequeño (backend + TURN) | 5 USD |
-| Storage de clips (≈12 GB/mes) | ~0.08 USD |
-| **Total** | **≈ 5–10 USD** |
+| Concepto                      | Costo mensual aprox. |
+| ----------------------------- | -------------------- |
+| VPS pequeño (backend + TURN)  | 5 USD                |
+| Storage de clips (≈12 GB/mes) | ~0.08 USD            |
+| **Total**                     | **≈ 5–10 USD**       |
 
 ---
 
@@ -265,11 +265,17 @@ TURN_PASSWORD=...
 
 El avance real se controla en [ROADMAP.md](ROADMAP.md):
 
-- [ ] M0 — Fundación y backend mínimo
-- [ ] M1 — Video en vivo
-- [ ] M2 — Grabación y eventos
-- [ ] M3 — Notificaciones y configuración remota
-- [ ] M4 — Endurecimiento y despliegue
+- [x] M0 — Fundación y backend mínimo
+- [x] M1 — Video en vivo
+- [x] M2 — Grabación y eventos
+- [x] M3 — Notificaciones y configuración remota
+- [~] M4 — Endurecimiento y despliegue (implementado; falta despliegue real y
+  prueba de 72 h en dispositivo)
+
+> **Nota:** backend y visor están validados con tests, typecheck y build.
+> La app Android está implementada y lista para compilar en Android Studio,
+> pero no se pudo compilar en este entorno (sin Android SDK). Las desviaciones
+> del spec están documentadas en el ROADMAP.
 
 ---
 
