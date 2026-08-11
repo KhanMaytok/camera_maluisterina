@@ -1,9 +1,11 @@
 import { mkdirSync, writeFileSync, rmSync, existsSync, createReadStream } from 'node:fs';
+import https from 'node:https';
 import { dirname, join } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
 import { config } from './config.js';
 import { AppError } from './errors.js';
 
@@ -28,6 +30,11 @@ function s3(): S3Client {
         accessKeyId: config.storage.accessKeyId ?? '',
         secretAccessKey: config.storage.secretAccessKey ?? '',
       },
+      requestHandler: config.storage.tlsInsecure
+        ? new NodeHttpHandler({
+            httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+          })
+        : undefined,
     });
   }
   return client;
@@ -67,6 +74,13 @@ export async function deleteObject(key: string): Promise<void> {
       Key: key,
     }),
   );
+}
+
+/** Borra sin propagar errores: un fallo de storage no debe tumbar el backend. */
+export function safeDeleteObject(key: string): void {
+  void deleteObject(key).catch((err) => {
+    console.error('Fallo al borrar objeto S3', key, err);
+  });
 }
 
 // Modo desarrollo: almacenamiento local bajo data/media cuando STORAGE_ENABLED=false.

@@ -2,7 +2,7 @@ import type Database from 'better-sqlite3';
 import { config } from './config.js';
 import { nowIso } from './db.js';
 import { notifyCameraOffline } from './push.js';
-import { deleteObject } from './storage.js';
+import { safeDeleteObject } from './storage.js';
 import { DEFAULT_CAMERA_CONFIG } from './types.js';
 
 export function runRetention(db: Database.Database): void {
@@ -23,8 +23,8 @@ export function runRetention(db: Database.Database): void {
       video_key: string | null;
     }[];
     for (const event of expired) {
-      if (event.thumb_key) void deleteObject(event.thumb_key);
-      if (event.video_key) void deleteObject(event.video_key);
+      if (event.thumb_key) safeDeleteObject(event.thumb_key);
+      if (event.video_key) safeDeleteObject(event.video_key);
       db.prepare('DELETE FROM events WHERE id = ?').run(event.id);
     }
   }

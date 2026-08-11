@@ -22,6 +22,7 @@ export const config = {
     region: process.env.S3_REGION ?? 'auto',
     accessKeyId: process.env.S3_ACCESS_KEY_ID,
     secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+    tlsInsecure: bool(process.env.S3_TLS_INSECURE),
     bucketClips: process.env.S3_BUCKET_CLIPS ?? 'grabadora-clips',
     bucketThumbs: process.env.S3_BUCKET_THUMBS ?? 'grabadora-thumbs',
   },

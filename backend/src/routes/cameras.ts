@@ -4,7 +4,7 @@ import type Database from 'better-sqlite3';
 import { hashPassword, requireAuth, requireCamera, verifyPassword } from '../auth.js';
 import { nowIso } from '../db.js';
 import { AppError, notFound } from '../errors.js';
-import { deleteObject } from '../storage.js';
+import { safeDeleteObject } from '../storage.js';
 import {
   DEFAULT_CAMERA_CONFIG,
   type CameraConfig,
@@ -130,8 +130,8 @@ export function cameraRoutes(app: FastifyInstance, db: Database.Database): void 
       .prepare('SELECT thumb_key, video_key FROM events WHERE camera_id = ?')
       .all(id) as { thumb_key: string | null; video_key: string | null }[];
     for (const event of events) {
-      if (event.thumb_key) void deleteObject(event.thumb_key);
-      if (event.video_key) void deleteObject(event.video_key);
+      if (event.thumb_key) safeDeleteObject(event.thumb_key);
+      if (event.video_key) safeDeleteObject(event.video_key);
     }
     db.prepare('DELETE FROM cameras WHERE id = ?').run(id);
     reply.send({ ok: true });

@@ -3,7 +3,7 @@ import type Database from 'better-sqlite3';
 import { requireAuth } from '../auth.js';
 import { config } from '../config.js';
 import { AppError, notFound } from '../errors.js';
-import { deleteObject, presignGet } from '../storage.js';
+import { presignGet, safeDeleteObject } from '../storage.js';
 import type { EventRow } from '../types.js';
 
 export function eventRoutes(app: FastifyInstance, db: Database.Database): void {
@@ -80,8 +80,8 @@ export function eventRoutes(app: FastifyInstance, db: Database.Database): void {
 
   app.delete('/api/events/:id', { preHandler: auth }, async (request, reply) => {
     const event = await getOwnedEvent(request, db);
-    if (event.thumb_key) void deleteObject(event.thumb_key);
-    if (event.video_key) void deleteObject(event.video_key);
+    if (event.thumb_key) safeDeleteObject(event.thumb_key);
+    if (event.video_key) safeDeleteObject(event.video_key);
     db.prepare('DELETE FROM events WHERE id = ?').run(event.id);
     reply.send({ ok: true });
   });
