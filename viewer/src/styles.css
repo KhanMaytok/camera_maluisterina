@@ -226,3 +226,15 @@ details summary {
   cursor: pointer;
   margin-top: 0.5rem;
 }
+
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.5rem;
+}
+
+fieldset legend {
+  color: var(--text);
+  opacity: 0.8;
+}

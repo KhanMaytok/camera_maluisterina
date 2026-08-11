@@ -45,6 +45,18 @@ export function EventsView({ cameras }: { cameras: Camera[] }) {
     );
   };
 
+  const download = (event: EventItem): void => {
+    void authMedia(`/api/events/${event.id}/video`)
+      .then((url) => {
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `grabadora-${event.started_at.replace(/[:.]/g, '-')}.mp4`;
+        anchor.click();
+        setTimeout(() => URL.revokeObjectURL(url), 10_000);
+      })
+      .catch((e) => alert(e.message));
+  };
+
   return (
     <section>
       <div className="filters">
@@ -73,7 +85,10 @@ export function EventsView({ cameras }: { cameras: Camera[] }) {
             </div>
             <div className="row">
               {event.kind === 'clip' && event.upload_status === 'uploaded' && (
-                <button onClick={() => play(event)}>Ver</button>
+                <>
+                  <button onClick={() => play(event)}>Ver</button>
+                  <button onClick={() => download(event)}>Descargar</button>
+                </>
               )}
               <button
                 onClick={() =>

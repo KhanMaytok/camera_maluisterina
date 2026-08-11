@@ -78,6 +78,92 @@ export function CameraSettings({ camera, onSaved }: { camera: Camera; onSaved: (
         />
         Detección de movimiento activa
       </label>
+      <fieldset>
+        <legend>Zona de detección (%)</legend>
+        <div className="row">
+          {(
+            [
+              ['x', 'X'],
+              ['y', 'Y'],
+              ['w', 'Ancho'],
+              ['h', 'Alto'],
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key}>
+              {label}
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={config.motionZone?.[key] ?? (key === 'w' || key === 'h' ? 100 : 0)}
+                onChange={(e) =>
+                  setConfig({
+                    ...config,
+                    motionZone: {
+                      x: config.motionZone?.x ?? 0,
+                      y: config.motionZone?.y ?? 0,
+                      w: config.motionZone?.w ?? 100,
+                      h: config.motionZone?.h ?? 100,
+                      [key]: Number(e.target.value),
+                    } as { x: number; y: number; w: number; h: number },
+                  })
+                }
+              />
+            </label>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="ghost"
+          onClick={() => setConfig({ ...config, motionZone: null })}
+        >
+          Toda la imagen
+        </button>
+      </fieldset>
+      <div className="row">
+        <label>
+          Detección desde
+          <input
+            type="time"
+            value={config.activeFrom ?? ''}
+            onChange={(e) => setConfig({ ...config, activeFrom: e.target.value || null })}
+          />
+        </label>
+        <label>
+          Detección hasta
+          <input
+            type="time"
+            value={config.activeTo ?? ''}
+            onChange={(e) => setConfig({ ...config, activeTo: e.target.value || null })}
+          />
+        </label>
+      </div>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={config.muted}
+          onChange={(e) => setConfig({ ...config, muted: e.target.checked })}
+        />
+        Silenciar notificaciones de esta cámara
+      </label>
+      <div className="row">
+        <label>
+          Silencio desde
+          <input
+            type="time"
+            value={config.mutedFrom ?? ''}
+            onChange={(e) => setConfig({ ...config, mutedFrom: e.target.value || null })}
+          />
+        </label>
+        <label>
+          Silencio hasta
+          <input
+            type="time"
+            value={config.mutedTo ?? ''}
+            onChange={(e) => setConfig({ ...config, mutedTo: e.target.value || null })}
+          />
+        </label>
+      </div>
       <div className="row">
         <label>
           Retención local (días)

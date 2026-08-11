@@ -11,6 +11,9 @@ export interface CameraConfig {
   cloudRetentionDays: number;
   activeFrom: string | null;
   activeTo: string | null;
+  muted: boolean;
+  mutedFrom: string | null;
+  mutedTo: string | null;
 }
 
 export interface Camera {
