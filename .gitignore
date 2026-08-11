@@ -33,3 +33,6 @@ npm-debug.log*
 # Tars de despliegue
 *.tar
 *.tar.gz
+
+# Herramientas de depuración local
+downloads/
