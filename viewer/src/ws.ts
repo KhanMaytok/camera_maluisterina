@@ -7,6 +7,7 @@ export class SignalingClient {
   private ws: WebSocket | null = null;
   private closed = false;
   private reconnectTimer: number | null = null;
+  private pingTimer: number | null = null;
   iceServers: RTCIceServer[] = [];
 
   constructor(
@@ -29,6 +30,8 @@ export class SignalingClient {
     this.ws = ws;
     ws.onopen = () => {
       this.handlers.onStatus('connecting');
+      // Mantiene la conexión viva: Nginx corta WebSockets inactivos a los 60 s.
+      this.pingTimer = window.setInterval(() => this.send({ type: 'ping' }), 20_000);
     };
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data as string) as SignalMessage;
@@ -40,6 +43,8 @@ export class SignalingClient {
       }
     };
     ws.onclose = () => {
+      if (this.pingTimer) window.clearInterval(this.pingTimer);
+      this.pingTimer = null;
       if (this.closed) return;
       this.handlers.onStatus('reconnecting');
       this.reconnectTimer = window.setTimeout(() => this.open(), 2000);
@@ -55,6 +60,8 @@ export class SignalingClient {
 
   close(): void {
     this.closed = true;
+    if (this.pingTimer) window.clearInterval(this.pingTimer);
+    this.pingTimer = null;
     if (this.reconnectTimer) window.clearTimeout(this.reconnectTimer);
     this.ws?.close();
   }

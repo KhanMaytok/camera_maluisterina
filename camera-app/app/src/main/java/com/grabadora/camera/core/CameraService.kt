@@ -442,6 +442,13 @@ class CameraService : LifecycleService() {
             // falle antes de reconectar, para no dejar sockets zombie que el
             // backend rechaza y que matan el peer WebRTC activo.
             val gate = CompletableDeferred<Unit>()
+            // Keep-alive: Nginx corta WebSockets inactivos a los 60 s.
+            val keepAlive = scope.launch {
+                while (isActive) {
+                    delay(20_000)
+                    signalingSocket?.send("""{"type":"ping"}""")
+                }
+            }
             signalingSocket = api.signalingSocket(
                 cameraId,
                 secret,
@@ -488,6 +495,7 @@ class CameraService : LifecycleService() {
                 },
             )
             gate.await()
+            keepAlive.cancel()
             publishStatus("Señalización desconectada, reconectando…")
             delay(backoff)
             backoff = (backoff * 2).coerceAtMost(30_000)
