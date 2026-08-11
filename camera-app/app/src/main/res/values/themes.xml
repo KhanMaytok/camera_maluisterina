@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.Grabadora" parent="android:Theme.Material.NoActionBar">
+        <item name="android:colorPrimary">#0f172a</item>
+        <item name="android:colorAccent">#38bdf8</item>
+        <item name="android:windowBackground">#0f172a</item>
+    </style>
+</resources>
+

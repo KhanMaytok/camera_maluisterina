@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Grabadora</string>
+    <string name="notification_channel">grabadora</string>
+    <string name="notification_title">Grabadora activa</string>
+    <string name="notification_text">La cámara está grabando y vigilando movimiento</string>
+</resources>
+
