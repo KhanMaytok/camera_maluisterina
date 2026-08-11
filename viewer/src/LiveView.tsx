@@ -52,7 +52,11 @@ export function LiveView({ camera }: { camera: Camera }) {
             sdp: message.sdp as string,
           });
         } else if (message.type === 'ice') {
-          await pc.addIceCandidate(message.candidate as RTCIceCandidateInit);
+          await pc.addIceCandidate({
+            candidate: message.candidate as string,
+            sdpMid: message.sdpMid as string | undefined,
+            sdpMLineIndex: message.sdpMLineIndex as number | undefined,
+          });
         } else if (message.type === 'camera_left') {
           setStatus('offline');
         }
