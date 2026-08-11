@@ -14,6 +14,7 @@ import android.graphics.YuvImage
 import android.os.BatteryManager
 import android.os.IBinder
 import android.os.PowerManager
+import android.os.StatFs
 import android.view.Surface
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -44,6 +45,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import java.util.concurrent.Executors
+import java.time.LocalTime
 
 class CameraService : Service() {
     companion object {
@@ -72,6 +74,8 @@ class CameraService : Service() {
     private var eventStartedAt: Long = 0
     private var snapshotRequestedAt: Long = 0
     private var thermalEnabled = true
+    private var thermalDegraded = false
+    private var clockOffsetMs = 0L
     private var eventActive = false
     private var lastMotionLevel = 0f
 
@@ -122,7 +126,8 @@ class CameraService : Service() {
                     cameraProvider = provider
                     val (w, h) = config.resolutionPair()
                     val detector = MotionDetector(160, 90)
-                    detector.enabled = config.detectionEnabled
+                    detector.enabled = config.detectionEnabled && withinActiveHours()
+                    detector.zone = config.motionZone?.toRectF()
                     motionDetector = detector
 
                     val processor = FrameProcessor(
@@ -130,7 +135,11 @@ class CameraService : Service() {
                             val level = detector.analyze(gray)
                             lastMotionLevel = level
                             val r = recorder
-                            if (r != null && level > thresholdFor(config.motionSensitivity) && !eventActive) {
+                            if (r != null &&
+                                level > thresholdFor(config.motionSensitivity) &&
+                                !eventActive &&
+                                withinActiveHours()
+                            ) {
                                 eventActive = true
                                 eventStartedAt = System.currentTimeMillis()
                                 r.startEvent(config.postRollSec * 1000L)
@@ -167,13 +176,18 @@ class CameraService : Service() {
         )
     }
 
-    private fun startRecorder(width: Int, height: Int) {
+    private fun startRecorder(
+        width: Int,
+        height: Int,
+        bitrateKbps: Int = config.bitrateKbps,
+        fps: Int = config.fps,
+    ) {
         val dir = File(getExternalFilesDir(null), "segments").apply { mkdirs() }
         recorder = ClipRecorder(
             width = width,
             height = height,
-            fps = config.fps,
-            bitrateKbps = config.bitrateKbps,
+            fps = fps,
+            bitrateKbps = bitrateKbps,
             preRollSec = config.preRollSec,
             segmentDir = dir,
         ).also { r ->
@@ -189,9 +203,32 @@ class CameraService : Service() {
     }
 
     private fun cleanupSegments(dir: File, latest: File) {
-        val cutoff = System.currentTimeMillis() - config.localRetentionDays * 86_400_000L
+        val freeMb = StatFs(dir.absolutePath).availableBytes / (1024 * 1024)
+        val retentionDays = if (freeMb < 2048) 1 else config.localRetentionDays
+        val cutoff = System.currentTimeMillis() - retentionDays * 86_400_000L
         dir.listFiles()?.forEach { file ->
             if (file != latest && file.lastModified() < cutoff) file.delete()
+        }
+    }
+
+    private fun MotionZone.toRectF(): RectF = RectF(
+        x / 100f,
+        y / 100f,
+        (x + w) / 100f,
+        (y + h) / 100f,
+    )
+
+    private fun withinActiveHours(): Boolean {
+        val from = config.activeFrom ?: return true
+        val to = config.activeTo ?: return true
+        return try {
+            val now = LocalTime.now()
+            val start = LocalTime.parse(from)
+            val end = LocalTime.parse(to)
+            if (start <= end) !now.isBefore(start) && now.isBefore(end)
+            else !now.isBefore(start) || now.isBefore(end)
+        } catch (_: Exception) {
+            true
         }
     }
 
@@ -244,6 +281,11 @@ class CameraService : Service() {
             if (cameraId.isNotEmpty() && secret.isNotEmpty()) {
                 try {
                     val res = api.heartbeat(cameraId, secret)
+                    clockOffsetMs = try {
+                        Date.parse(res.now) - System.currentTimeMillis()
+                    } catch (_: Exception) {
+                        clockOffsetMs
+                    }
                     val remoteConfig = CameraConfig.fromJson(res.config)
                     if (remoteConfig != configStore.loadConfig()) {
                         configStore.saveConfig(remoteConfig)
@@ -265,8 +307,8 @@ class CameraService : Service() {
 
     private fun applyConfig(newConfig: CameraConfig) {
         config = newConfig
-        motionDetector?.enabled = newConfig.detectionEnabled && thermalEnabled
-        motionDetector?.zone = null
+        motionDetector?.enabled = newConfig.detectionEnabled && thermalEnabled && withinActiveHours()
+        motionDetector?.zone = newConfig.motionZone?.toRectF()
     }
 
     private fun handleCommand(type: String) {
@@ -279,7 +321,8 @@ class CameraService : Service() {
             "resume_detection" -> motionDetector?.enabled = thermalEnabled
             "reconfigure" -> {
                 config = configStore.loadConfig()
-                motionDetector?.enabled = config.detectionEnabled && thermalEnabled
+                motionDetector?.enabled = config.detectionEnabled && thermalEnabled && withinActiveHours()
+                motionDetector?.zone = config.motionZone?.toRectF()
             }
         }
     }
@@ -356,11 +399,28 @@ class CameraService : Service() {
         val batteryManager = getSystemService(BATTERY_SERVICE) as BatteryManager
         while (true) {
             val tempC = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_TEMPERATURE) / 10f
-            thermalEnabled = tempC < 42f
-            motionDetector?.enabled = config.detectionEnabled && thermalEnabled
-            if (!thermalEnabled) publishStatus("Térmica: detección pausada (${tempC}°C)")
+            thermalEnabled = tempC < 45f
+            if (tempC >= 42f && !thermalDegraded) {
+                thermalDegraded = true
+                restartRecorder(halfBitrate = true, lowerFps = tempC >= 45f)
+                publishStatus("Térmica ${tempC}°C: calidad reducida")
+            } else if (thermalDegraded && tempC < 40f) {
+                thermalDegraded = false
+                restartRecorder(halfBitrate = false, lowerFps = false)
+                publishStatus("Térmica normal: calidad restaurada")
+            }
+            motionDetector?.enabled = config.detectionEnabled && thermalEnabled && withinActiveHours()
             delay(60_000)
         }
+    }
+
+    private fun restartRecorder(halfBitrate: Boolean, lowerFps: Boolean) {
+        val (w, h) = config.resolutionPair()
+        val bitrate = if (halfBitrate) config.bitrateKbps / 2 else config.bitrateKbps
+        val fps = if (lowerFps) 15 else config.fps
+        recorder?.stop()
+        recorder = null
+        startRecorder(w, h, bitrate, fps)
     }
 
     private suspend fun signalingLoop() {
@@ -421,7 +481,7 @@ class CameraService : Service() {
     private fun iso(ms: Long): String =
         SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
             .apply { timeZone = TimeZone.getTimeZone("UTC") }
-            .format(Date(ms))
+            .format(Date(ms + clockOffsetMs))
 
     private fun createChannel() {
         val channel = NotificationChannel(

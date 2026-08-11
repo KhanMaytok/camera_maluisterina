@@ -3,6 +3,13 @@ package com.grabadora.camera.core
 import android.content.Context
 import org.json.JSONObject
 
+data class MotionZone(
+    val x: Float,
+    val y: Float,
+    val w: Float,
+    val h: Float,
+)
+
 data class CameraConfig(
     val resolution: String = "720p",
     val fps: Int = 24,
@@ -13,6 +20,9 @@ data class CameraConfig(
     val postRollSec: Int = 30,
     val localRetentionDays: Int = 7,
     val cloudRetentionDays: Int = 30,
+    val motionZone: MotionZone? = null,
+    val activeFrom: String? = null,
+    val activeTo: String? = null,
 ) {
     fun resolutionPair(): Pair<Int, Int> = when (resolution) {
         "480p" -> 640 to 480
@@ -31,6 +41,16 @@ data class CameraConfig(
             postRollSec = o.optInt("postRollSec", 30).coerceIn(10, 120),
             localRetentionDays = o.optInt("localRetentionDays", 7).coerceIn(1, 90),
             cloudRetentionDays = o.optInt("cloudRetentionDays", 30).coerceIn(1, 365),
+            motionZone = o.optJSONObject("motionZone")?.let {
+                MotionZone(
+                    x = it.optDouble("x", 0.0).toFloat(),
+                    y = it.optDouble("y", 0.0).toFloat(),
+                    w = it.optDouble("w", 100.0).toFloat(),
+                    h = it.optDouble("h", 100.0).toFloat(),
+                )
+            },
+            activeFrom = o.optString("activeFrom", "").ifEmpty { null },
+            activeTo = o.optString("activeTo", "").ifEmpty { null },
         )
     }
 }
@@ -78,6 +98,13 @@ class ConfigStore(context: Context) {
             .putInt("preroll_sec", config.preRollSec)
             .putInt("postroll_sec", config.postRollSec)
             .putInt("local_retention_days", config.localRetentionDays)
+            .putBoolean("has_zone", config.motionZone != null)
+            .putFloat("zone_x", config.motionZone?.x ?: 0f)
+            .putFloat("zone_y", config.motionZone?.y ?: 0f)
+            .putFloat("zone_w", config.motionZone?.w ?: 100f)
+            .putFloat("zone_h", config.motionZone?.h ?: 100f)
+            .putString("active_from", config.activeFrom)
+            .putString("active_to", config.activeTo)
             .apply()
     }
 
@@ -91,6 +118,17 @@ class ConfigStore(context: Context) {
         postRollSec = prefs.getInt("postroll_sec", 30),
         localRetentionDays = prefs.getInt("local_retention_days", 7),
         cloudRetentionDays = prefs.getInt("cloud_retention_days", 30),
+        motionZone = if (prefs.getBoolean("has_zone", false)) {
+            MotionZone(
+                x = prefs.getFloat("zone_x", 0f),
+                y = prefs.getFloat("zone_y", 0f),
+                w = prefs.getFloat("zone_w", 100f),
+                h = prefs.getFloat("zone_h", 100f),
+            )
+        } else {
+            null
+        },
+        activeFrom = prefs.getString("active_from", null),
+        activeTo = prefs.getString("active_to", null),
     )
 }
-
