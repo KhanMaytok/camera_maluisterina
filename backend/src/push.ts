@@ -6,6 +6,7 @@ import type Database from 'better-sqlite3';
 import { config } from './config.js';
 import { nowIso } from './db.js';
 import { AppError } from './errors.js';
+import { DEFAULT_CAMERA_CONFIG, type CameraConfig } from './types.js';
 
 interface VapidKeys {
   publicKey: string;
@@ -54,9 +55,14 @@ export function subscribeDevice(
 export async function notifyEvent(
   db: Database.Database,
   event: { id: string; camera_id: string; thumb_key: string | null },
-  cameraName: string,
 ): Promise<void> {
   if (!config.push.enabled) return;
+  const camera = db
+    .prepare('SELECT name, config FROM cameras WHERE id = ?')
+    .get(event.camera_id) as { name: string; config: string } | undefined;
+  if (!camera) return;
+  const cameraConfig = { ...DEFAULT_CAMERA_CONFIG, ...JSON.parse(camera.config) };
+  if (!shouldNotify(cameraConfig, new Date())) return;
   const devices = db
     .prepare(
       "SELECT id, user_id, push_data FROM devices WHERE kind = 'viewer' AND push_data IS NOT NULL",
@@ -68,8 +74,8 @@ export async function notifyEvent(
     : undefined;
   const payload = JSON.stringify({
     title: 'Movimiento detectado',
-    body: cameraName,
-    data: { event_id: event.id, camera_id: event.camera_id, camera_name: cameraName },
+    body: camera.name,
+    data: { event_id: event.id, camera_id: event.camera_id, camera_name: camera.name },
     image: thumbUrl,
     icon: thumbUrl,
   });
@@ -95,6 +101,33 @@ export async function notifyEvent(
       }
     }
   }
+}
+
+/**
+ * Decide si una notificación debe enviarse según el silencio configurado:
+ * `muted` silencia siempre; si `mutedFrom`/`mutedTo` definen una franja
+ * (HH:mm en hora local del servidor), se silencia dentro de esa franja.
+ */
+export function shouldNotify(config: CameraConfig, now: Date): boolean {
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  const from = parseHm(config.mutedFrom);
+  const to = parseHm(config.mutedTo);
+  if (config.muted && (from === null || to === null)) return false;
+  if (from !== null && to !== null) {
+    if (from <= to) {
+      if (minutes >= from && minutes < to) return false;
+    } else if (minutes >= from || minutes < to) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function parseHm(value: string | null): number | null {
+  if (!value) return null;
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
 }
 
 export async function notifyCameraOffline(

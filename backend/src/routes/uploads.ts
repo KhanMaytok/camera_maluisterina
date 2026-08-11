@@ -89,14 +89,7 @@ export function uploadRoutes(app: FastifyInstance, db: Database.Database): void 
       Math.max(0, Math.round(size_bytes ?? 0)),
       event_id,
     );
-    const camera = db.prepare('SELECT name FROM cameras WHERE id = ?').get(cameraId) as {
-      name: string;
-    };
-    await notifyEvent(
-      db,
-      { id: row.id, camera_id: cameraId, thumb_key: row.thumb_key },
-      camera.name,
-    );
+    await notifyEvent(db, { id: row.id, camera_id: cameraId, thumb_key: row.thumb_key });
     reply.send({ ok: true });
   });
 

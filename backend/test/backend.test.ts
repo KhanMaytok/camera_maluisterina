@@ -5,7 +5,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import WebSocket from 'ws';
 import { buildApp, type AppHandle } from '../src/app.js';
+import { shouldNotify } from '../src/push.js';
 import { checkOfflineCameras } from '../src/retention.js';
+import { DEFAULT_CAMERA_CONFIG } from '../src/types.js';
 
 let handle: AppHandle;
 let dir: string;
@@ -230,4 +232,19 @@ test('cámara sin heartbeat pasa a offline', () => {
     status: string;
   };
   assert.equal(row.status, 'offline');
+});
+
+test('silencio de notificaciones por franja horaria', () => {
+  const base = { ...DEFAULT_CAMERA_CONFIG, muted: true, mutedFrom: '22:00', mutedTo: '06:00' };
+  assert.equal(shouldNotify(base, new Date('2026-08-11T23:30:00')), false);
+  assert.equal(shouldNotify(base, new Date('2026-08-11T12:00:00')), true);
+
+  const overnight = { ...DEFAULT_CAMERA_CONFIG, muted: true, mutedFrom: '23:00', mutedTo: '01:00' };
+  assert.equal(shouldNotify(overnight, new Date('2026-08-11T00:30:00')), false);
+
+  const alwaysMuted = { ...DEFAULT_CAMERA_CONFIG, muted: true };
+  assert.equal(shouldNotify(alwaysMuted, new Date()), false);
+
+  const unmuted = { ...DEFAULT_CAMERA_CONFIG, muted: false };
+  assert.equal(shouldNotify(unmuted, new Date()), true);
 });

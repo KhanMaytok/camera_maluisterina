@@ -11,6 +11,9 @@ export interface CameraConfig {
   cloudRetentionDays: number;
   activeFrom: string | null; // HH:mm
   activeTo: string | null;
+  muted: boolean;
+  mutedFrom: string | null; // HH:mm
+  mutedTo: string | null;
 }
 
 export const DEFAULT_CAMERA_CONFIG: CameraConfig = {
@@ -26,6 +29,9 @@ export const DEFAULT_CAMERA_CONFIG: CameraConfig = {
   cloudRetentionDays: 30,
   activeFrom: null,
   activeTo: null,
+  muted: false,
+  mutedFrom: null,
+  mutedTo: null,
 };
 
 export interface PendingCommand {
