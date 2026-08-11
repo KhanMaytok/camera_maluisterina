@@ -92,22 +92,35 @@ importante).
 
 ### Opción A (recomendada): CLI con tar por carpeta
 
-Desde la raíz del repositorio:
+Desde la raíz del repositorio (el CLI empaqueta la carpeta actual por sí solo;
+**no** uses `-t` con una carpeta, ese flag espera un archivo `.tar`):
 
 ```bash
 # Backend
 cd backend
-caprover deploy -a grabadora-backend -t .
+caprover deploy -a grabadora-backend
 
 # Visor
 cd ../viewer
-caprover deploy -a grabadora-viewer -t .
+caprover deploy -a grabadora-viewer
 ```
 
 El CLI empaqueta la carpeta (excluye `node_modules` y `.git`) y CapRover
 construye con el `captain-definition` de cada carpeta (contexto = la carpeta,
 por eso los `COPY` relativos del Dockerfile funcionan). En cada despliegue
 posterior, vuelve a ejecutar el mismo comando.
+
+Si prefieres pasar un tar explícito, créalo primero y apunta `-t` al archivo:
+
+```bash
+cd backend
+tar -czf ../grabadora-backend.tar .
+caprover deploy -a grabadora-backend -t ../grabadora-backend.tar
+```
+
+> Error típico: `form-data: EISDIR: illegal operation on a directory` aparece
+> cuando se ejecuta `caprover deploy -a <app> -t .` (carpeta en `-t`). La
+> solución es omitir `-t` y desplegar desde dentro de la carpeta.
 
 ### Opción B: imágenes de registro (la más robusta para CI)
 
