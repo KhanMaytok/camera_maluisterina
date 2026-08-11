@@ -1,0 +1,32 @@
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Entorno y datos
+.env
+.env.local
+backend/data/
+*.db
+*.db-journal
+
+# Android
+camera-app/.gradle/
+camera-app/build/
+camera-app/app/build/
+camera-app/local.properties
+*.apk
+*.aab
+
+# Editor / SO
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
