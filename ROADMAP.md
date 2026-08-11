@@ -274,8 +274,8 @@ sin pérdida de clips por caídas transitorias; documentación lista.
 ## Validaciones transversales
 
 - [x] `npm run lint`, `npm run typecheck` y tests verdes en backend y visor.
-- [ ] Android: build de release (requiere Android SDK; el proyecto está listo
-      para compilar en Android Studio).
+- [x] Android: build automático en CI con APK descargable como artifact
+      (debug firmado + release unsigned); build local en Android Studio.
 - [x] Sin secretos en el repositorio (revisar `.env*`, logs y git status).
 - [x] Sin dependencias de YouTube ni servicios públicos de video como
       almacenamiento (criterio global 6).

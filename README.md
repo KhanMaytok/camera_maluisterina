@@ -273,9 +273,9 @@ El avance real se controla en [ROADMAP.md](ROADMAP.md):
   prueba de 72 h en dispositivo)
 
 > **Nota:** backend y visor están validados con tests, typecheck y build.
-> La app Android está implementada y lista para compilar en Android Studio,
-> pero no se pudo compilar en este entorno (sin Android SDK). Las desviaciones
-> del spec están documentadas en el ROADMAP.
+> La app Android se compila en GitHub Actions (workflow **Android build**) y
+> el APK se descarga como artifact. Las desviaciones del spec están
+> documentadas en el ROADMAP.
 
 ---
 

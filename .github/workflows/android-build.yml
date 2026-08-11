@@ -1,0 +1,58 @@
+name: Android build
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "camera-app/**"
+  pull_request:
+    paths:
+      - "camera-app/**"
+
+jobs:
+  build-apk:
+    name: Build APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build debug APK
+        working-directory: camera-app
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Build release APK (unsigned)
+        working-directory: camera-app
+        run: gradle assembleRelease --no-daemon
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: grabandora-debug-apk
+          path: camera-app/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: warn
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: grabandora-release-apk
+          path: camera-app/app/build/outputs/apk/release/app-release-unsigned.apk
+          if-no-files-found: warn
+
+      - name: Show APK sizes
+        working-directory: camera-app
+        run: |
+          find app/build/outputs/apk -name "*.apk" -exec ls -lh {} \;

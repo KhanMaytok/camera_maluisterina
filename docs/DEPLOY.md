@@ -116,8 +116,11 @@ Registra las credenciales en el `.env` del backend (`TURN_URL`,
 
 ## 6. App cámara (Android)
 
-1. Abre `camera-app/` en Android Studio (Android SDK 35).
-2. Compila el APK (`Build > Build APK`).
+1. Abre **Actions > Android build** en GitHub y ejecuta el workflow
+   (o espera el build automático al cambiar `camera-app/`). Descarga el APK
+   desde los artifacts (`grabadora-debug-apk` para instalar directo).
+2. Alternativa local: abre `camera-app/` en Android Studio (Android SDK 35) y
+   compila `Build > Build APK`.
 3. Instala el APK en el teléfono viejo.
 4. Configura el servidor (`https://grabadora.midominio.com`) y pulsa
    **Emparejar**: la app muestra un código de 8 caracteres.
