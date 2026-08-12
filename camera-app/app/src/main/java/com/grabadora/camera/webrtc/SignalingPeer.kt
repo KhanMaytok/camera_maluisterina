@@ -79,11 +79,15 @@ class SignalingPeer(
 
     fun handleIce(candidate: JSONObject) {
         val pc = peer ?: return
+        // El visor envía el candidato como objeto anidado
+        // {"candidate": {"candidate": "...", "sdpMid": "0", "sdpMLineIndex": 0}},
+        // mientras que la cámara emite el formato plano en la raíz.
+        val raw = candidate.optJSONObject("candidate")
         pc.addIceCandidate(
             org.webrtc.IceCandidate(
-                candidate.optString("sdpMid"),
-                candidate.optInt("sdpMLineIndex"),
-                candidate.optString("candidate"),
+                (raw ?: candidate).optString("sdpMid"),
+                (raw ?: candidate).optInt("sdpMLineIndex"),
+                (raw ?: candidate).optString("candidate"),
             ),
         )
     }

@@ -36,3 +36,4 @@ npm-debug.log*
 
 # Herramientas de depuración local
 downloads/
+viewer-*.png
